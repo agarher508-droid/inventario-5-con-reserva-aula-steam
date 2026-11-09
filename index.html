@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AulaSTEAM - Préstamos, Devoluciones y Reservas</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      background-color: #121212;
+      color: #ffffff;
+      font-family: system-ui, -apple-system, sans-serif;
+      padding: 20px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    h1 { text-align: center; color: #4da6ff; margin-bottom: 5px; }
+    .subtitle { text-align: center; color: #aaa; margin-bottom: 20px; font-size: 14px; }
+    .card {
+      background: #1e1e1e;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    label { display: block; margin-top: 15px; font-weight: bold; color: #e0e0e0; }
+    input, select {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 6px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: white;
+      box-sizing: border-box;
+      font-size: 16px;
+    }
+    #reader {
+      width: 100%;
+      margin-top: 15px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #1e1e1e;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #0080ff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:active { background: #0059b3; }
+    .btn-cam { background: #28a745; margin-top: 10px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <h1>AulaSTEAM</h1>
+  <div class="subtitle">Gestión Integral del Aula y Materiales</div>
+
+  <div class="card">
+    <label for="tipoRegistro">¿Qué deseas realizar?</label>
+    <select id="tipoRegistro" onchange="cambiarTipo()">
+      <option value="Préstamo">📦 Préstamo de Equipo</option>
+      <option value="Devolución">🔄 Devolución de Equipo</option>
+      <option value="Reserva Aula">📅 Reserva del AulaSTEAM</option>
+    </select>
+
+    <label for="docenteInput">Docente / Profesor/a:</label>
+    <input type="text" id="docenteInput" placeholder="Escribe tu nombre completo...">
+
+    <!-- BLOQUE PARA EQUIPOS (PRÉSTAMO / DEVOLUCIÓN) -->
+    <div id="seccionEquipo">
+      <label for="equipoInput">Código del Equipo:</label>
+      <input type="text" id="equipoInput" placeholder="Escanea o escribe el código (ej. CAR-PORT)">
+
+      <button type="button" class="btn-cam" onclick="iniciarCamara()">📷 Abrir Cámara</button>
+      <div id="reader"></div>
+    </div>
+
+    <!-- BLOQUE PARA RESERVA DE ESPACIO -->
+    <div id="seccionReserva" class="hidden">
+      <label for="fechaInput">Fecha de la Reserva:</label>
+      <input type="date" id="fechaInput">
+
+      <label for="tramoInput">Horario / Sesión:</label>
+      <select id="tramoInput">
+        <option value="1ª Hora (8:00 - 9:00)">1ª Hora (8:00 - 9:00)</option>
+        <option value="2ª Hora (9:00 - 10:00)">2ª Hora (9:00 - 10:00)</option>
+        <option value="3ª Hora (10:00 - 11:00)">3ª Hora (10:00 - 11:00)</option>
+        <option value="Recreo">Recreo</option>
+        <option value="4ª Hora (11:30 - 12:30)">4ª Hora (11:30 - 12:30)</option>
+        <option value="5ª Hora (12:30 - 13:30)">5ª Hora (12:30 - 13:30)</option>
+        <option value="6ª Hora (13:30 - 14:30)">6ª Hora (13:30 - 14:30)</option>
+      </select>
+
+      <label for="cursoInput">Curso / Grupo / Motivo:</label>
+      <input type="text" id="cursoInput" placeholder="Ej. 3º ESO A - Robótica">
+    </div>
+
+    <button type="button" id="btnGuardar">Registrar Operación</button>
+  </div>
+
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbydTbUNUR6yO0yOdKixFUWoNo4OrpT3X8ftYfRAn6-IaBdyPeqjs1Wq1Xz7tqsCi2gh/exec";
+    let html5QrcodeScanner = null;
+
+    function cambiarTipo() {
+      const tipo = document.getElementById("tipoRegistro").value;
+      const seccionEquipo = document.getElementById("seccionEquipo");
+      const seccionReserva = document.getElementById("seccionReserva");
+
+      if (tipo === "Reserva Aula") {
+        seccionEquipo.classList.add("hidden");
+        seccionReserva.classList.remove("hidden");
+        if (html5QrcodeScanner) {
+          html5QrcodeScanner.clear();
+        }
+      } else {
+        seccionEquipo.classList.remove("hidden");
+        seccionReserva.classList.add("hidden");
+      }
+    }
+
+    function iniciarCamara() {
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear();
+      }
+      html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+      html5QrcodeScanner.render((decodedText) => {
+        document.getElementById("equipoInput").value = decodedText;
+        alert("✅ Código detectado: " + decodedText);
+        html5QrcodeScanner.clear();
+      }, (error) => {
+        // Escaneando...
+      });
+    }
+
+    document.getElementById("btnGuardar").addEventListener("click", function() {
+      const tipo = document.getElementById("tipoRegistro").value;
+      const docente = document.getElementById("docenteInput").value.trim();
+
+      if (!docente) {
+        alert("⚠️ Por favor, introduce el nombre del docente.");
+        return;
+      }
+
+      let datos = {
+        accion: tipo,
+        docente: docente
+      };
+
+      if (tipo === "Reserva Aula") {
+        const fecha = document.getElementById("fechaInput").value;
+        const tramo = document.getElementById("tramoInput").value;
+        const curso = document.getElementById("cursoInput").value.trim();
+
+        if (!fecha) {
+          alert("⚠️ Por favor, selecciona la fecha de la reserva.");
+          return;
+        }
+
+        datos.equipo = `RESERVA: ${fecha} | ${tramo} ${curso ? '(' + curso + ')' : ''}`;
+      } else {
+        const equipo = document.getElementById("equipoInput").value.trim();
+        if (!equipo) {
+          alert("⚠️ Por favor, escanea o escribe el código del equipo.");
+          return;
+        }
+        datos.equipo = equipo;
+      }
+
+      fetch(SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify(datos)
+      })
+      .then(() => {
+        alert(`✅ ¡${tipo} registrado con éxito en Google Sheets!`);
+        document.getElementById("docenteInput").value = "";
+        document.getElementById("equipoInput").value = "";
+        document.getElementById("cursoInput").value = "";
+        document.getElementById("fechaInput").value = "";
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("❌ Error de red al conectar con Google Sheets.");
+      });
+    });
+  </script>
+</body>
+</html>
